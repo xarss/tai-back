@@ -10,7 +10,7 @@ export const searchText = async (keyword, address) => {
         "X-Goog-Api-Key": MAPS_API_KEY,
         "Content-Type": "application/json",
         "X-Goog-FieldMask":
-          "places.id,places.googleMapsUri,places.displayName,places.websiteUri,places.shortFormattedAddress,places.rating,places.currentOpeningHours,places.photos,places.primaryTypeDisplayName,places.userRatingCount",
+          "places.id,places.googleMapsUri,places.displayName,places.websiteUri,places.shortFormattedAddress,places.rating,places.currentOpeningHours,places.photos,places.primaryTypeDisplayName,places.userRatingCount,places.priceLevel",
       },
       body: JSON.stringify({ textQuery }),
     }
@@ -41,7 +41,7 @@ export const addressToCoors = async (address) => {
   };
 };
 
-export const searchNearby = async (lat, lng, primaryTypes) => {
+export const searchNearby = async (lat, lng, primaryTypes, radius = 3000) => {
   const places = [];
   for (const type of primaryTypes) {
     const response = await fetch(
@@ -52,11 +52,11 @@ export const searchNearby = async (lat, lng, primaryTypes) => {
           "X-Goog-Api-Key": MAPS_API_KEY,
           "Content-Type": "application/json",
           "X-Goog-FieldMask":
-            "places.id,places.googleMapsUri,places.displayName,places.websiteUri,places.shortFormattedAddress,places.rating,places.currentOpeningHours,places.photos,places.primaryTypeDisplayName,places.userRatingCount",
+            "places.id,places.googleMapsUri,places.displayName,places.websiteUri,places.shortFormattedAddress,places.rating,places.currentOpeningHours,places.photos,places.primaryTypeDisplayName,places.userRatingCount,places.priceLevel",
         },
         body: JSON.stringify({
           locationRestriction: {
-            circle: { center: { latitude: lat, longitude: lng }, radius: 3000 },
+            circle: { center: { latitude: lat, longitude: lng }, radius: radius },
           },
           includedTypes: [type],
         }),

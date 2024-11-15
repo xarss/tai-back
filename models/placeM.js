@@ -5,6 +5,15 @@ import placeScoreStructure from "./placeSchema.json" with { type: "json" };
 export class Place {
   static seenIds = new Set();
 
+  static priceLevelMap = {
+    PRICE_LEVEL_UNSPECIFIED : 0,
+    PRICE_LEVEL_FREE : 0,
+    PRICE_LEVEL_INEXPENSIVE : 1,
+    PRICE_LEVEL_MODERATE : 2,
+    PRICE_LEVEL_EXPENSIVE : 3,
+    PRICE_LEVEL_VERY_EXPENSIVE : 4
+  }
+
   constructor(placeData) {
     if (Place.seenIds.has(placeData.id)) {
       return null;
@@ -20,6 +29,7 @@ export class Place {
     this.mapsUri = placeData.googleMapsUri || "";
     this.websiteUri = placeData.websiteUri || null;
     this.photoRef = placeData.photos?.[0]?.name || null;
+    this.priceLevel = Place.priceLevelMap[placeData.priceLevel]
 
     this.score = null;
   }

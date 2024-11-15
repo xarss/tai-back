@@ -1,20 +1,29 @@
-export function buildLocationPrompt (prompt, currentLocation) {
+export function buildLocationPrompt (prompt, currentLocation, preferences) {
+    const preferencesTag = getPreferencesTag(preferences);
+
     return `
-      1. You must shorten prompts given by a user inside the tags <PROMPT> </PROMPT> in order to select only the important aspects of the prompt. The user is looking for places and it's your job to separate the right keywords so that the place can be found.
-      1.1 All keywords must be place related. If a user wants to buy snacks for example, the keywords could be "supermaket", "convenience store".
-      1.2 The keywords must always describe the place that will deliver what the user asked for. So if the user is asking to something to drink, never use words like "beer" or "alcohool", always choose words like "bar".
-      1.3 The tags <CURRENT_LOCATION></CURRENT_LOCATION> will only contain true or false values and there can only be 4 outcomes: A, B, C or D
-      1.3.A If the value inside the tags <CURRENT_LOCATION> </CURRENT_LOCATION> is TRUE, leave the tag <LOCATION/> empty. Skip outcomes B, C and D
-      1.3.B If the value inside the tags <CURRENT_LOCATION> </CURRENT_LOCATION> is TRUE but the user is refering to a diferent location, the <SUCCESS/> tag value should be the word false and add a descriptive message in the tag <MESSAGE></MESSAGE> explaining why he can't say a location if he is already using it's own. Skip outcomes C and D.
-      1.3.C If the value inside the tags <CURRENT_LOCATION> </CURRENT_LOCATION> is FALSE, use the source location the user mentioned as the value for <LOCATION/>. For example: "Coffees in Grece", the location should be Grece. Skip outcome D
-      1.3.D If the value inside the tags <CURRENT_LOCATION> </CURRENT_LOCATION> is FALSE and the user did not mention any location, the <SUCCESS/> tag value should be the word false and add a descriptive message in the tag <MESSAGE></MESSAGE> explaining why he has to say a location if he is not using it's own
-      2. Your response should focus on filling the values as indicated inside the <JSON> </JSON> tags.
-      3. Replace the Tag <KEYWORDS/> with the shortened text from the initial user prompt containing only the keywords
-      3.1. The <KEYWORDS/> response should contain between 3 and 7 words, with the most important keywords to represent the users prompt. You must avoid using verbs. If the verb is "buy", you might want to consider using "store", what matches most in the context.
-      4. Place inside the tag <PRIMARY_TYPES/> all types that describe what the user wants.
-      5. If the user's prompt does not seem promissing enought to describe minimally it's desires, you must replace the <SUCCESS/> tag with the word false, otherwize, if the user prompt is descriptive enought, replace <SUCCESS/> with the word true. Also, come up with a short explanation on why you don't understand the prompt, and write it inside the tags <MESSAGE></MESSAGE>
-      6. If the response is successfull, add inside the <MESSAGE></MESSAGE> tags with a text as if you were answering the prompt presenting the places: "here are some places that ...". Be creative with the text.
-  
+      1. You are a travel assistant that will separate usefull keywords and Google Maps API types based on the user's question inside <PROMPT> </PROMPT> in order to select only the important aspects of the prompt. The user is looking for places and it's your job to separate the right keywords so that the specific place can be found.
+      2 The tags <CURRENT_LOCATION></CURRENT_LOCATION> will only contain true or false values and there can only be 4 outcomes: A, B, C or D
+      2.A If the value inside the tags <CURRENT_LOCATION> </CURRENT_LOCATION> is TRUE, leave the tag <LOCATION/> empty. Skip outcomes B, C and D
+      2.B If the value inside the tags <CURRENT_LOCATION> </CURRENT_LOCATION> is TRUE but the user is refering to a diferent location, the <SUCCESS/> tag value should be the word false and add a descriptive message in the tag <MESSAGE></MESSAGE> explaining why he can't say a location if he is already using it's own. Skip outcomes C and D.
+      2.C If the value inside the tags <CURRENT_LOCATION> </CURRENT_LOCATION> is FALSE, use the source location the user mentioned as the value for <LOCATION/>. For example: "Coffees in Grece", the location should be Grece. Skip outcome D
+      2.D If the value inside the tags <CURRENT_LOCATION> </CURRENT_LOCATION> is FALSE and the user did not mention any location, the <SUCCESS/> tag value should be the word false and add a descriptive message in the tag <MESSAGE></MESSAGE> explaining why he has to say a location if he is not using it's own
+      3. Your response should focus on filling the values as indicated inside the <JSON> </JSON> tags.
+      4. Replace the Tag <KEYWORDS/> with the shortened text from the initial user prompt containing only the keywords
+      4.1. The <KEYWORDS/> response should contain between 1 and 3 words, with the most important keywords to represent the users prompt. You must avoid using verbs. If the verb is "buy", you might want to consider using "store", what matches most in the context. If the user prompt is "Where can I eat spicy burgers" the keywords could be "spicy burger". Do not use commas.
+      5. Place inside the tag <PRIMARY_TYPES/> all types that describe what the user wants.
+      6. If the user's prompt does not seem promissing enought to describe minimally it's desires, you must replace the <SUCCESS/> tag with the word false, otherwize, if the user prompt is descriptive enought, replace <SUCCESS/> with the word true. Also, come up with a short explanation on why you don't understand the prompt, and write it inside the tags <MESSAGE></MESSAGE>
+      7. If the response is successfull, add inside the <MESSAGE></MESSAGE> tags with a text as if you were answering the prompt presenting the places: "here are some places that ...". Be creative with the text.
+      8. The selected keywords and types must reflect the user preferences inside <PREFERENCES></PREFERENCES> tags. Focus on selecting words that describe that user.
+      9. Regarding the user preferences under <PREFERENCES></PREFERENCES> tags:
+      9.1 <NATUREVSCITY> </NATUREVSCITY> tags goes from 0 to 100 in which 0 means the user prefers nature strongly and 100 means user prefers city strongly.
+      9.2 <BUDGET> </BUDGET> goes from 0 to 4, in which 0 is super cheap and 4 is super expensive.
+      9.3 <CULTURE> </CULTURE> goes from 0 to 100 in which 0 means no interest in local culture and 100 means strong interest in local culture.
+
+      <PREFERENCES>
+        ${preferencesTag}
+      </PREFERENCES>
+
       <JSON>
       {
           "success": <SUCCESS/>,
@@ -27,7 +36,7 @@ export function buildLocationPrompt (prompt, currentLocation) {
   
       <CURRENT_LOCATION>${currentLocation ? "TRUE" : "FALSE"}</CURRENT_LOCATION>
       <PROMPT>${prompt}</PROMPT>
-    `;
+    `.trim();
 };
 
 function getPlaceTag(place) {
@@ -73,9 +82,8 @@ export function buildPlaceScorePrompt(prompt, place, preferences) {
       9.5. <RATING> </RATING> is the rating of the place on google maps.
       10. Regarding the user preferences under <PREFERENCES></PREFERENCES> tags:
       10.1 <NATUREVSCITY> </NATUREVSCITY> tags goes from 0 to 100 in which 0 means the user prefers nature strongly and 100 means user prefers city strongly.
-      10.2 <BUDGET> </BUDGET> goes from 0 to 4, in which 0 is super cheap and 4 is super expensive.
-      10.3 <CULTURE> </CULTURE> goes from 0 to 100 in which 0 means no interest in local culture and 100 means strong interest in local culture.
-  
+      10.2 <CULTURE> </CULTURE> goes from 0 to 100 in which 0 means no interest in local culture and 100 means strong interest in local culture.
+
       <PREFERENCES>
         ${preferencesTag}
       </PREFERENCES>

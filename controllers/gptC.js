@@ -19,12 +19,14 @@ export async function getPlaces(context) {
     let lat = null;
     let lon = null;
 
-    const fullPrompt = buildLocationPrompt(userPrompt, currentLocation);
+    const fullPrompt = buildLocationPrompt(userPrompt, currentLocation, preferences);
     const gptLocationResponse = await askStructuredGPT(fullPrompt, responseSchema);
     const parsedLocationResponse = JSON.parse(gptLocationResponse);
+    
 
     if (!parsedLocationResponse.success) {
       context.response.body = { success: false, message: parsedLocationResponse.message };
+      return;
     }
 
     // Handle location information
@@ -38,6 +40,11 @@ export async function getPlaces(context) {
       lat = coors.latitude;
       lon = coors.longitude;
     }
+
+    console.log(parsedLocationResponse);
+    console.log(`Location Name: ${address}`);
+    console.log(`Latitude: ${lat}\nLongitude: ${lon}`);
+    console.log(preferences);
 
     const placesText = await searchText(parsedLocationResponse.keywords, address);
     const placesNearby = await searchNearby(lat, lon, parsedLocationResponse.primary_types);
@@ -65,6 +72,10 @@ export async function getPlaces(context) {
         return false;
       }
 
+      if(place.priceLevel > preferences.budget) {
+        return false;
+      }
+
       return true;
     });
 
@@ -79,18 +90,21 @@ export async function getPlaces(context) {
 
     validPlaces.sort((a, b) => b.score - a.score);
 
+    // console.log(validPlaces[0])
+
     context.response.body = {
       success: true,
       places: validPlaces, // Return the places with their scores
       message: parsedLocationResponse.message,
     };
   } catch (error) {
+    context.response.status = 500;
     context.response.body = { success: false, message: `Error: ${error}` };
     console.log(error);
   }
 };
 
-export const getPlaceOverview = async (context) => {
+export async function getPlaceOverview (context) {
   try {
     const { place } = await context.request.body.json();
 
